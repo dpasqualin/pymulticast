@@ -3,12 +3,6 @@
 import socket
 import time
 
-ANY = "0.0.0.0"
-SENDERPORT=1501
-MCAST_ADDR = "224.168.2.9"
-MCAST_PORT = 1600
-TTL=1 # Nao sera repassado a nenhum router
-
 class McastServer:
     """ Abre uma conexao multicast.
             port: Porta multicast
@@ -64,6 +58,12 @@ class McastServer:
         return self.__serverport
 
 if __name__ == "__main__":
+    ANY = "0.0.0.0"
+    SENDERPORT=1501
+    MCAST_ADDR = "224.168.2.9"
+    MCAST_PORT = 1600
+    TTL=1 # Nao sera repassado a nenhum router
+
     mcast_server = McastServer(MCAST_PORT,MCAST_ADDR)
 
     while 1:
