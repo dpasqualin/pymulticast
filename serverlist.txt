@@ -1,0 +1,7 @@
+# lista com os servidores multicast
+# ID IP PORT [COMMENT]
+
+1 200.17.202.56 50000 #dalmore
+2 200.17.202.52 50000 #cohiba
+3 200.17.202.57 50000 #talisker
+4 200.17.202.53 50000 #bowmore
