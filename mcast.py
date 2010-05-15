@@ -32,6 +32,9 @@ class McastParams(object):
     def getServerPort(self):
         return self.__serverport
 
+    def read(self):
+        return self.getSocket().recvfrom(1024)
+
 class McastServer(McastParams):
     """ Abre uma conexao multicast.
             port: Porta multicast
@@ -108,10 +111,6 @@ class McastClient(McastParams):
         sock.setblocking(0)
 
         return sock
-
-    def read(self):
-        """ Le mensagem do socket """
-        return self.getSocket().recvfrom(1024);
 
     def getSocket(self):
         return self.__socket
