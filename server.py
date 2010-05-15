@@ -43,7 +43,7 @@ class McastServer:
     def send(self, msg):
         """ Envia mensagem msg ao multicast """
         mcastaddr,mcastport = self.getAddr(), self.getPort()
-        self.getSocket().sendto(reply, (mcastaddr,mcastport));
+        self.getSocket().sendto(msg, (mcastaddr,mcastport));
 
     def getSocket(self):
         return self.__socket
