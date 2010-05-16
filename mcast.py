@@ -1,18 +1,43 @@
 #!/usr/bin/env python
 
-import socket
-import time
+import socket,time,threading
+
+def waitrequest(*args):
+    """ Executa funcao "handle" para cada mensagem recebida.
+        Funcao executada em uma thread separada """
+
+    obj, handle = args[0], args[1]
+    while not obj.shouldQuit():
+        try:
+            handle(obj.read())
+        except socket.error:
+            pass
+        time.sleep(0.01)
 
 class McastParams(object):
     """ Esta classe armazena e retorna alguns parametros e funcoes comuns ao
     cliente e servidor multicast. O objetivo principal eh evitar redundancia
     de codigo """
     def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=1):
+
         self.__port = port
         self.__addr = addr
         self.__serverbound = sbound
         self.__serverport = sport or port-1
         self.__ttl = ttl
+
+        self.__quit = False
+        self.__t = None
+
+    def quit(self):
+        """ Mata threads, se existirem """
+        if self.__readt:
+            self.send("Quiting")
+            self.__quit = True
+
+
+    def shouldQuit(self):
+        return self.__quit
 
     def getSocket(self):
         return self.__socket
@@ -35,6 +60,11 @@ class McastParams(object):
     def read(self):
         return self.getSocket().recvfrom(1024)
 
+    def send(self, msg):
+        pass
+
+#########################################################################
+##### Multicast Server ##################################################
 class McastServer(McastParams):
     """ Abre uma conexao multicast.
             port: Porta multicast
@@ -43,9 +73,16 @@ class McastServer(McastParams):
             sport: Porta do servidor
             ttl: TTL
     """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=1):
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
+                 ttl=1, handle=None):
         McastParams.__init__(self,port,addr,sbound,sport,ttl)
         self.__socket = self.__connect()
+
+        # Cria thread para receber mensagens
+        if handle:
+            self.__t = threading.Thread(target=waitrequest,
+                                        args=(self,handle))
+            self.__t.start()
 
     def __connect(self):
         """ Abre conexao  """
@@ -81,9 +118,16 @@ class McastClient(McastParams):
             ttl: TTL
     """
 
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=1):
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
+                 ttl=1,handle=None):
         McastParams.__init__(self,port,addr,sbound,sport,ttl)
         self.__socket = self.__connect()
+
+        # Cria thread para receber mensagens
+        if handle:
+            self.__t = threading.Thread(target=waitrequest,
+                                        args=(self,handle))
+            self.__t.start()
 
     def __connect(self):
 
@@ -128,27 +172,28 @@ if __name__ == "__main__":
     MCAST_PORT = 1600
     TTL=1 # Nao sera repassado a nenhum router
 
+    # Guarda a variavel usada para criar o multicast. Ser util para
+    # fecha-lo quando um CTRL+C for detectado
+    mcast = None
+
+    def clienthandle(msg):
+        data,addr = msg
+        print "We got data!"
+        print "FROM: ", addr
+        print "DATA: ", data
+
     def runclient():
         """ Executa em modo client """
-        mcast_client = McastClient(MCAST_PORT,MCAST_ADDR)
-
-        while 1:
-            try:
-                data, addr = mcast_client.read()
-            except socket.error, e:
-                pass
-            else:
-                print "We got data!"
-                print "FROM: ", addr
-                print "DATA: ", data
+        mcast = McastClient(MCAST_PORT,MCAST_ADDR,
+                                   handle=clienthandle)
 
     def runserver():
         """ Executa em modo servidor """
-        mcast_server = McastServer(MCAST_PORT,MCAST_ADDR)
+        mcast = McastServer(MCAST_PORT,MCAST_ADDR)
 
         while 1:
             #send the data "hello, world" to the multicast addr: port
-            mcast_server.send("Hello World")
+            mcast.send("Hello World")
             time.sleep(5)
 
     # Configuracao das funcoes
@@ -158,8 +203,9 @@ if __name__ == "__main__":
         try:
             print "Abrindo",sys.argv[1]
             prog[sys.argv[1]]()
-        except KeyboardInterrupt:
-            print "KeyboardInterrupt"
+        except:
+            print "Saindo"
+            mcast.quit()
             sys.exit(0)
     else:
         print "%s: server/client" % sys.argv[0]
