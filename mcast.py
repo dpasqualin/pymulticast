@@ -69,7 +69,9 @@ class McastParams(object):
         return self.getSocket().recvfrom(1024)
 
     def send(self, msg):
-        pass
+        """ Envia mensagem msg ao multicast """
+        mcastaddr,mcastport = self.getAddr(), self.getPort()
+        self.getSocket().sendto(msg, (mcastaddr,mcastport));
 
 #########################################################################
 ##### Multicast Server ##################################################
@@ -91,6 +93,8 @@ class McastServer(McastParams):
             self.__t = threading.Thread(target=waitrequest,
                                         args=(self,handle))
             self.__t.start()
+        else:
+            self.__t = None
 
     def __connect(self):
         """ Abre conexao  """
@@ -105,11 +109,6 @@ class McastServer(McastParams):
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL,ttl)
 
         return sock
-
-    def send(self, msg):
-        """ Envia mensagem msg ao multicast """
-        mcastaddr,mcastport = self.getAddr(), self.getPort()
-        self.getSocket().sendto(msg, (mcastaddr,mcastport));
 
     def getSocket(self):
         return self.__socket
@@ -139,6 +138,8 @@ class McastClient(McastParams):
             self.__t = threading.Thread(target=waitrequest,
                                         args=(self,handle))
             self.__t.start()
+        else:
+            self.__t = None
 
     def __connect(self):
 
@@ -199,8 +200,11 @@ if __name__ == "__main__":
     def runclient():
         """ Executa em modo client """
         global mcast
-        mcast = McastClient(MCAST_PORT,MCAST_ADDR,
-                                   handle=clienthandle)
+        mcast = McastClient(MCAST_PORT,MCAST_ADDR)
+
+        while 1:
+            mcast.send("5+5")
+            time.sleep(5)
 
     def runserver():
         """ Executa em modo servidor """
@@ -209,8 +213,7 @@ if __name__ == "__main__":
 
         while 1:
             #send the data "hello, world" to the multicast addr: port
-            mcast.send("Hello World")
-            time.sleep(5)
+            print mcast.read()
 
     # Configuracao das funcoes
     prog = { "client": runclient, "server" : runserver }
