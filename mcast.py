@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import socket,time,threading
+import socket,time,threading,os,signal
 
 def waitrequest(*args):
     """ Executa funcao "handle" para cada mensagem recebida.
         Funcao executada em uma thread separada """
 
     obj, handle = args[0], args[1]
+    obj.setThreadPID(os.getpid())
     while not obj.shouldQuit():
         try:
             handle(obj.read())
@@ -27,17 +28,18 @@ class McastParams(object):
         self.__ttl = ttl
 
         self.__quit = False
-        self.__t = None
 
     def quit(self):
         """ Mata threads, se existirem """
-        if self.__readt:
-            self.send("Quiting")
-            self.__quit = True
-
+        if self.getThread():
+            os.kill(self.getThreadPID(),signal.SIGKILL)
+            self.closeSocket()
 
     def shouldQuit(self):
         return self.__quit
+
+    def closeSocket(self):
+        self.getSocket().close()
 
     def getSocket(self):
         return self.__socket
@@ -56,6 +58,12 @@ class McastParams(object):
 
     def getServerPort(self):
         return self.__serverport
+
+    def setThreadPID(self,pid):
+        self.__threadPID = pid
+
+    def getThreadPID(self):
+        return self.__threadPID
 
     def read(self):
         return self.getSocket().recvfrom(1024)
@@ -105,6 +113,9 @@ class McastServer(McastParams):
 
     def getSocket(self):
         return self.__socket
+
+    def getThread(self):
+        return self.__t
 
 ################################################################
 ################################################################
@@ -159,6 +170,9 @@ class McastClient(McastParams):
     def getSocket(self):
         return self.__socket
 
+    def getThread(self):
+        return self.__t
+
 
 ###########################################################################
 ### Se executado diretamente via shell
@@ -184,11 +198,13 @@ if __name__ == "__main__":
 
     def runclient():
         """ Executa em modo client """
+        global mcast
         mcast = McastClient(MCAST_PORT,MCAST_ADDR,
                                    handle=clienthandle)
 
     def runserver():
         """ Executa em modo servidor """
+        global mcast
         mcast = McastServer(MCAST_PORT,MCAST_ADDR)
 
         while 1:
@@ -203,6 +219,7 @@ if __name__ == "__main__":
         try:
             print "Abrindo",sys.argv[1]
             prog[sys.argv[1]]()
+            raw_input("ctrl+c para sair...")
         except:
             print "Saindo"
             mcast.quit()
