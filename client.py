@@ -3,7 +3,7 @@
 from mcastservice import McastServiceClient
 import sys,re
 
-class OnlineCalc(McastServiceClient):
+class OnlineCalcClient(McastServiceClient):
     def run(self,request):
         exp = "^[0-9()\+\-\/\*]*$"
         if re.match(exp,request):
@@ -25,7 +25,7 @@ def main(argc, argv):
     mcastPort,mcastAddr,udpPort,udpAddr = argv[1:]
 
     # Cria conexao com o multicast e abre udp para resposta
-    onlinecalc = OnlineCalc(mcastPort,mcastAddr,udpPort,udpAddr)
+    onlinecalc = OnlineCalcClient(mcastPort,mcastAddr,udpPort,udpAddr)
 
     # Loop para leitura de comandos
     print "ctrl+c para sair."
