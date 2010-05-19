@@ -34,7 +34,7 @@ class McastCalculatorServer(object):
 class McastCalculatorClient(object):
     """ Essa classe envia uma requisicao de calculo para
     (mcastPort,mcastAddr) e aguarda resposta em (udpHost,udpPort) """
-    def __init__(self, mcastPort, mcastAddr, udpHost, udpPort):
+    def __init__(self, mcastPort, mcastAddr, udpPort, udpAddr):
         # Sera usado para enviar requisicoes ao servico multicast
         self.__mcastClt = McastClient(mcastPort,mcastAddr)
 
