@@ -66,7 +66,11 @@ class McastParams(object):
         return self.__threadPID
 
     def read(self):
-        return self.getSocket().recvfrom(1024)
+        while True:
+            try:
+                return self.getSocket().recvfrom(1024)
+            except socket.error:
+                pass
 
     def send(self, msg):
         """ Envia mensagem msg ao multicast """
@@ -74,8 +78,8 @@ class McastParams(object):
         self.getSocket().sendto(msg, (mcastaddr,mcastport));
 
 #########################################################################
-##### Multicast Server ##################################################
-class McastServer(McastParams):
+##### Multicast Client ##################################################
+class McastClient(McastParams):
     """ Abre uma conexao multicast.
             port: Porta multicast
             addr: Endereco de multicast
@@ -118,8 +122,7 @@ class McastServer(McastParams):
 
 ################################################################
 ################################################################
-
-class McastClient(McastParams):
+class McastServer(McastParams):
     """ Abre uma conexao multicast.
             port: Porta multicast
             addr: Endereco de multicast
