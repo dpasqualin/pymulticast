@@ -24,7 +24,7 @@ class McastCalculatorServer(object):
         """ Le uma nova requisicao do multicast """
         return self.getMcast().read()
 
-    def sendResponse(self,udpHost,udpPort,response):
+    def sendReply(self,udpHost,udpPort,response):
         """ Envia response para client (udpHost,udpPort) """
         UDPClient(udpHost,udpPort).send(response)
 
@@ -41,17 +41,17 @@ class McastCalculatorClient(object):
         # O Socket udp aguarda pela resposta dos servidores
         self.__udpSrv = UDPServer(udpHost,udpPort)
 
-    def calculate(self, calc):
+    def run(self, request):
         """ Envia equacao "calc" via multicast e aguarda resposta via udp.
             calc eh uma string que pode possuir os simbolos +-/*()
         """
-        self.__sendToMcast(calc)
+        self.__sendToMcast(request)
         return self.readFromUDP()
 
     def __sendToMcast(self,calc):
         self.getMcast().send(calc)
 
-    def __readFromUDP()
+    def __readFromUDP():
         return self.getUDP().read()
 
     def getMcast(self):
