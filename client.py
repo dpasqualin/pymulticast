@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from mcastcalculator import McastCalculatorClient
+from mcastservice import McastServiceClient
 import sys,re
 
-class OnlineCalc(McastCalculatorClient):
+class OnlineCalc(McastServiceClient):
     def run(self,request):
         exp = "^[0-9()\+\-\/\*]*$"
         if re.match(exp,request):
-            return McastCalculatorClient.run(self,request)
+            return McastServiceClient.run(self,request)
         else:
             return None
 
