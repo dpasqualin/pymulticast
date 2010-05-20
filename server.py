@@ -29,7 +29,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reREQUEST = re.compile("^(?P<request>[0-9()\+\-\/\*]*)$")
 
         while not self.__quit:
-            ((port,host),data) = getRequest()
+            ((ip,port),data) = getRequest()
             if reALIVE.match(data):
                 data = reALIVE.search(data)
                 self.hearBeatReceived(int(data.group("id")))
@@ -40,7 +40,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 self.requestSentby(serverId,request)
             elif reREQUEST.match(data):
                 data = reREQUEST.search(data)
-                request = Request(data.group("request"))
+                data = "%s:%s:%s" %(ip,str(port),data.group("request"))
+                request = Request(data)
                 self.addRequest(request)
 
     def addRequest(self, request):
