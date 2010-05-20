@@ -38,7 +38,7 @@ class Request(object):
     """ Esta classe armazena informacoes sobre uma requisicao.
         request eh no formato -> IP:PORT:REQUEST """
     def __init__(self,request):
-        self.__IP, self.__port, self.__request = request.split()
+        self.__IP, self.__port, self.__request = request.split(":")
 
     def getIP(self):
         return self.__IP
