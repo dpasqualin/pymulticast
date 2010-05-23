@@ -5,13 +5,16 @@ import re,sys,socket,threading
 from misc import Server,Request
 from time import sleep
 
+# timeout do heartbeat, em segundos
+TOUT_HEARTBEAT = 5.0
+
 class Timeout(threading.Thread):
     """ Roda em uma thread separada o metodo timeoutFunction que deve
-    existir dentro da classe passada como argumento em objectInstance. O
+    existir dentro da classe passada como argumento em objMethod. O
     argumento timeout determina de quanto em quanto tempo essa funcao deve
     ser executada """
-    def __init__(self, objectInstance, timeout):
-        self.__objectInstance = objectInstance
+    def __init__(self, objMethod, timeout):
+        self.__objMethod = objMethod
         self.__timeout = timeout
         self.__quit = False
 
@@ -27,7 +30,7 @@ class Timeout(threading.Thread):
         return self.__timeout
 
     def getObjectInstance(self):
-        return self.__objectInstance
+        return self.__objMethod
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
     """ serverDict: dicionario com elementos Server """
@@ -54,6 +57,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
         reREQUEST = re.compile("^(?P<request>[0-9()\+\-\/\*]*)$")
 
+        # Criando timeout para o heartbeat
+        tout = Timeout(self.sendHeartBeat,TOUT_HEARTBEAT)
+        tout.start()
+        self.addTimeout(tout)
+
         while not self.__quit:
             ((ip,port),data) = getRequest()
             if reALIVE.match(data):
@@ -69,6 +77,9 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 data = "%s:%s:%s" %(ip,str(port),data.group("request"))
                 request = Request(data)
                 self.addRequest(request)
+
+    def addTimeout(self,obj):
+        self.__timeoutList.append(obj)
 
     def addRequest(self, request):
         """ Adiciona uma nova requisicao a lista e a trata """
