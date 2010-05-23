@@ -21,7 +21,7 @@ class Server(object):
         return self.__hostname
 
     def getPort(self):
-        retuen self.__port
+        return self.__port
 
     def isAlive(self):
         return self.__isAlive
