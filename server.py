@@ -3,6 +3,31 @@
 from mcastcservice import McastServiceServer
 import re,sys,socket,threading
 from misc import Server,Request
+from time import sleep
+
+class Timeout(threading.Thread):
+    """ Roda em uma thread separada o metodo timeoutFunction que deve
+    existir dentro da classe passada como argumento em objectInstance. O
+    argumento timeout determina de quanto em quanto tempo essa funcao deve
+    ser executada """
+    def __init__(self, objectInstance, timeout):
+        self.__objectInstance = objectInstance
+        self.__timeout = timeout
+        self.__quit = False
+
+    def run(self):
+        while not self.__quit:
+            self.getObjectInstance.timeoutFunction()
+            sleep(self.getTimeout())
+
+    def quit(self):
+        self.__quit = True
+
+    def getTimeout(self):
+        return self.__timeout
+
+    def getObjectInstance(self):
+        return self.__objectInstance
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
     """ serverDict: dicionario com elementos Server """
@@ -13,6 +38,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         self.__serverDict = serverDict
         self.__server = serverId
         self.__requestList = []
+        self.__timeoutList = []
 
         # Sinaliza quando a thread tera que ser fechada
         self.__quit = False
@@ -99,3 +125,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 
     def getServerDict(self):
         return self.__serverDict
+
+    def getTimeoutList(self):
+        return self.__timeoutList
+
+    def quit(self):
+        self.__quit = True
+        for tout in self.getTimeoutList():
+            tout.quit()
