@@ -5,10 +5,10 @@ import re,sys,socket
 class Server(object):
     """ Armazena informacoes sobre um servidor """
     def __init__(self,serverID,serverHostname,serverPort,isAlive=False):
-        self.__id = serverID
+        self.__id = int(serverID)
         self.__hostname = serverHostname
         self.__isAlive = isAlive
-        self.__port = serverPort
+        self.__port = int(serverPort)
         self.__ip = socket.gethostbyname(serverHostname)
 
     def getIP(self):
