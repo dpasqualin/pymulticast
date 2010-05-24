@@ -5,8 +5,11 @@ import re,sys,socket,threading
 from misc import Server,Request,Timeout,Log
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
 
-# timeout do heartbeat, em segundos
-TOUT_HEARTBEAT = 5.0
+# O HeartBeat do servidor sera enviado de acordo com este intervalo
+TOUT_HEARTBEAT = 1.0
+# Se um servidor qualquer nao enviar um HeartBeat nesse intervalo de tempo
+# ele deve ser marcado como "morto"
+TOUT_DEAD = 5*TOUT_HEARTBEAT
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
     def __init__(self, serverId, mcastPort, mcastAddr, serverFile):
@@ -97,12 +100,12 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def heartBeatReceived(self,serverID):
         """ Marca servidor serverID como vivo """
         self.writeLog(LOGCONTROL,"HeartBeatReceived:%d"%serverID)
-        self.getServerDict()[int(serverID)].setNotAlive()
+        self.getServerDict()[int(serverID)].setAlive()
 
     def missingHeartBeat(self,serverID):
         """ Marca servidor serverID como morto """
         self.writeLog(LOGCONTROL,"MissingHeartBeat:%d"%serverID)
-        self.getServerDict()[int(serverID)].setAlive()
+        self.getServerDict()[int(serverID)].setNotAlive()
 
     def sendHeartBeat(self):
         """ Envia mensagem ao multicast informando que esta vivo """
