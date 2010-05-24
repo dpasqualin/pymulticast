@@ -7,7 +7,7 @@ class UDPParams(object):
     def __init__(self,host,port):
         self.__socket = socket(AF_INET,SOCK_DGRAM)
         self.__host = host
-        self.__port = port
+        self.__port = int(port)
         self.__addr = (self.getHost(),self.getPort())
 
     def send(self, msg):

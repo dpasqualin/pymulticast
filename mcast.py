@@ -21,11 +21,11 @@ class McastParams(object):
     de codigo """
     def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=1):
 
-        self.__port = port
+        self.__port = int(port)
         self.__addr = addr
         self.__serverbound = sbound
-        self.__serverport = sport or port-1
-        self.__ttl = ttl
+        self.__serverport = sport or int(port)-1
+        self.__ttl = int(ttl)
 
         self.__quit = False
 
