@@ -39,6 +39,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reALIVE = re.compile("^%s:ALIVE$" % reID)
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
         reREQUEST = re.compile("^%s:%s$"%(rePORT,reREQ))
+        reQUIT = re.compile("^%s:QUIT$"% reID)
 
         # Criando timeout para o heartbeat
         self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
@@ -63,6 +64,10 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 request = Request(data)
                 self.addRequest(request)
                 self.sendReply(request)
+            elif reQUIT.match(data):
+                data = reQUIT.search(data)
+                serverID = int(data.group("id"))
+                self.serverQuiting(serverID)
             else:
                 msg = "Request invalido (%s,%d):%s"%(ip,port,data)
                 self.writeLog(LOGWARNING,msg)
@@ -72,6 +77,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         tout = Timeout(method,tout)
         tout.start()
         self.addTimeout(tout)
+
+    def serverQuiting(self, serverID):
+        """ Quando um servidor vai sair seta ele como morto """
+        if self.getServer() != self.getServerDict()[serverID]:
+            self.missingHeartBeat(serverID)
 
     def readServerFile(self,serverFile):
         """ Le um arquivo contendo os servidores que serao utilizados e
@@ -98,7 +108,6 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         """ Adiciona uma nova requisicao a lista e a trata """
 
         self.writeLog(LOGMESSAGE,"Request:%s"%request)
-        # TODO: tratar request
         self.__requestList.append(request)
 
     def removeRequest(self, request):
@@ -172,8 +181,9 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         return self.__timeoutList
 
     def quit(self):
-        self.__quit = True
         self.writeLog(LOGCONTROL,"Saindo")
+        self.__quit = True
+        self.getMcast().send("%d:QUIT"%self.getServer().getID())
         for tout in self.getTimeoutList():
             tout.quit()
         self.writeLog(LOGDEBUG,"Morto")
