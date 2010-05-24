@@ -20,7 +20,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         self.__server = int(serverID)
         self.__requestList = []
         self.__timeoutList = []
-        self.__log = Log()
+        self.__log = Log("server%d.log"%self.__server)
         self.writeLog(LOGCONTROL,"Iniciando...")
 
         # Sinaliza quando a thread tera que ser fechada
@@ -34,7 +34,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reID = "(?P<id>[0-9]+)"
         rePORT = "(?P<port>[0-9]{4,5})"
         reREQCONF = "(?P<request>.*)"
-        reREQ = "(?P<request>[0-9()\+\-\/\*]*)"
+        reREQ = "(?P<request>[0-9()\.\+\-\/\*]*)"
 
         reALIVE = re.compile("^%s:ALIVE$" % reID)
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
@@ -147,7 +147,10 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         que comunica os outros servidores do grupo multicast que a
         requisicao request foi respondida. """
         if self.whoAnswers() == self.getServer():
-            reply = eval(request.getRequest())
+            try:
+                reply = eval(request.getRequest())
+            except (SyntaxError,ZeroDivisionError),error:
+                reply = error
             self.writeLog(LOGCONTROL,"Respondendo %s = %s"%(request,reply))
             host,port = request.getIP(),request.getPort()
             McastServiceServer.sendReply(self,host,port,reply)
