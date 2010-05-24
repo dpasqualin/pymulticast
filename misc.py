@@ -129,7 +129,7 @@ class Request(object):
         return self.__request
 
     def __str__(self):
-        return "%s:%s:%s" %(self.getIP(),getPort(),self.getRequest())
+        return "%s:%s:%s" %(self.getIP(),self.getPort(),self.getRequest())
 
     def __cmp__(self,x):
         i1,i2 = self.getIP(),x.getIP()
