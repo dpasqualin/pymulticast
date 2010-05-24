@@ -194,7 +194,8 @@ def main(argc,argv):
         onlinecalc.start()
         onlinecalc.join()
     except KeyboardInterrupt:
-        pass
+        print "Saindo"
+        onlinecalc.quit()
 
     return 0
 
