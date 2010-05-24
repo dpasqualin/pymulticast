@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from mcastservice import McastServiceServer
-import re,sys,socket,threading
+import re,sys,socket,threading,time
 from misc import Server,Request,Timeout,Log
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
 
@@ -101,6 +101,14 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         """ Marca servidor serverID como vivo """
         self.writeLog(LOGCONTROL,"HeartBeatReceived:%d"%serverID)
         self.getServerDict()[int(serverID)].setAlive()
+
+    def updateHeartBeat(self):
+        """ Verifica se algum servidor nao responde a mais de TOUT_DEAD
+        segundos """
+        for server in self.getServerDict().values():
+            if server != self.getServer():
+                if time.time() - server.getLastContact() > TOUT_DEAD:
+                    self.missingHeartBeat(server.getID())
 
     def missingHeartBeat(self,serverID):
         """ Marca servidor serverID como morto """
