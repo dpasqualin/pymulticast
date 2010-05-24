@@ -1,7 +1,42 @@
 #!/usr/bin/env python
 
 import re,sys,socket,threading
-from time import sleep
+from time import sleep,asctime
+
+CONFFILE = "mcast.conf"
+LOGFILE = "mcast.log"
+
+def readConf():
+    """ Le arquivo de configuracao mcast.conf e retorna dicionario
+        {opcao:valor} """
+
+    res = {}
+    for line in open(CONFFILE):
+        if not re.match("^(#|$)",line):
+            opt,value = [ i.strip() for i in line.split("=") ]
+            res[opt] = value
+
+    return res
+
+class Log(object):
+    """ Salva mensagens no arquivo de log LOGFILE, respeitando o verboso
+    desejado escrito em CONFFILE """
+    def __init__(self):
+        self.__conf = readConf()
+        self.__file = open(LOGFILE,"a")
+        self.verbose = self.__conf["verbose"]
+
+    def log(self, verbose, msg):
+        """ Escreve mensagem de log no arquivo se verbose for <= ao verbose
+        definido no arquivo de configuracao """
+        if verbose <= self.verbose:
+            timestamp = asctime()[4:].replace(":","")
+            msg = "%s: %s\n" % (timestamp,msg)
+            self.__write(msg)
+
+    def __write(self,msg):
+        self.__file.write(msg)
+        self.__file.flush()
 
 class Timeout(threading.Thread):
     """ Roda em uma thread separada o metodo timeoutFunction que deve
