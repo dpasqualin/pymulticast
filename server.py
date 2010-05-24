@@ -14,7 +14,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         threading.Thread.__init__(self)
         McastServiceServer.__init__(self,mcastPort,mcastAddr)
         self.__serverDict = self.readServerFile(serverFile)
-        self.__server = serverId
+        self.__server = int(serverId)
         self.__requestList = []
         self.__timeoutList = []
 
