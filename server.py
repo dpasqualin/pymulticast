@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from mcastcservice import McastServiceServer
+from mcastservice import McastServiceServer
 import re,sys,socket,threading
 from misc import Server,Request
 from time import sleep
@@ -14,13 +14,14 @@ class Timeout(threading.Thread):
     argumento timeout determina de quanto em quanto tempo essa funcao deve
     ser executada """
     def __init__(self, objMethod, timeout):
+        threading.Thread.__init__(self)
         self.__objMethod = objMethod
         self.__timeout = timeout
         self.__quit = False
 
     def run(self):
         while not self.__quit:
-            self.getObjectInstance.timeoutFunction()
+            self.runMethod()
             sleep(self.getTimeout())
 
     def quit(self):
@@ -29,16 +30,15 @@ class Timeout(threading.Thread):
     def getTimeout(self):
         return self.__timeout
 
-    def getObjectInstance(self):
-        return self.__objMethod
+    def runMethod(self):
+        return self.__objMethod()
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
-    """ serverDict: dicionario com elementos Server """
-    def __init__(self, severId, mcastPort, mcastAddr, serverDict):
+    def __init__(self, severId, mcastPort, mcastAddr, serverFile):
 
         threading.Thread.__init__(self)
         McastServiceServer.__init__(self,mcastPort,mcastAddr)
-        self.__serverDict = serverDict
+        self.__serverDict = self.readServerFile(serverFile)
         self.__server = serverId
         self.__requestList = []
         self.__timeoutList = []
@@ -78,6 +78,19 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 request = Request(data)
                 self.addRequest(request)
 
+    def readServerFile(self,serverFile):
+        """ Le um arquivo contendo os servidores que serao utilizados e
+        retorna um dicionario {id:Server} """
+
+        serverList = {}
+        for line in open(serverFile):
+            # Se a linha nao eh um comentario nem vazia
+            if not re.match("^(#|$)",line):
+                sid,shostname,sport = line.split()
+                serverList[sid] = Server(sid,shostname,sport)
+
+        return serverList
+
     def addTimeout(self,obj):
         self.__timeoutList.append(obj)
 
@@ -93,8 +106,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             self.__requestList.remove(request)
 
     def requestSentby(self, serverID, request):
-    """ Confirmacao de que o servidor serverID respondeu a requisicao
-    request, que deve ser removida da lista """
+        """ Confirmacao de que o servidor serverID respondeu a requisicao
+        request, que deve ser removida da lista """
         self.removeRequest(request)
 
     def heartBeatReceived(self,serverID):
