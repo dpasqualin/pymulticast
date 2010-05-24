@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import socket,time,threading,os,signal
+from misc import Log,LOGERROR
 
 def waitrequest(*args):
     """ Executa funcao "handle" para cada mensagem recebida.
@@ -8,10 +9,12 @@ def waitrequest(*args):
 
     obj, handle = args[0], args[1]
     obj.setThreadPID(os.getpid())
+    log = Log()
     while not obj.shouldQuit():
         try:
             handle(obj.read())
-        except socket.error:
+        except socket.error,errormsg:
+            log.log(LOGERROR,"watrequest:%s"%errormsg)
             pass
         time.sleep(0.01)
 
@@ -19,14 +22,14 @@ class McastParams(object):
     """ Esta classe armazena e retorna alguns parametros e funcoes comuns ao
     cliente e servidor multicast. O objetivo principal eh evitar redundancia
     de codigo """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=1):
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=5):
 
         self.__port = int(port)
         self.__addr = addr
         self.__serverbound = sbound
         self.__serverport = sport or int(port)-1
         self.__ttl = int(ttl)
-
+        self.__log = Log()
         self.__quit = False
 
     def quit(self):
@@ -53,6 +56,9 @@ class McastParams(object):
     def getAddr(self):
         return self.__addr
 
+    def writeLog(self, v, msg):
+        self.__log.log(v,"Mcast:%s"%msg)
+
     def getServerBound(self):
         return self.__serverbound
 
@@ -69,8 +75,8 @@ class McastParams(object):
         while True:
             try:
                 return self.getSocket().recvfrom(1024)
-            except socket.error:
-                pass
+            except socket.error, errormsg:
+                self.writeLog(LOGERROR,"read")
 
     def send(self, msg):
         """ Envia mensagem msg ao multicast """
@@ -88,7 +94,7 @@ class McastClient(McastParams):
             ttl: TTL
     """
     def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
-                 ttl=1, handle=None):
+                 ttl=5, handle=None):
         McastParams.__init__(self,port,addr,sbound,sport,ttl)
         self.__socket = self.__connect()
 
@@ -132,7 +138,7 @@ class McastServer(McastParams):
     """
 
     def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
-                 ttl=1,handle=None):
+                 ttl=5,handle=None):
         McastParams.__init__(self,port,addr,sbound,sport,ttl)
         self.__socket = self.__connect()
 
