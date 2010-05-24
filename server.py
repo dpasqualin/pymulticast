@@ -193,6 +193,7 @@ def main(argc,argv):
     try:
         onlinecalc.start()
         onlinecalc.join()
+        raw_input("ctrl+c para sair...")
     except KeyboardInterrupt:
         print "Saindo"
         onlinecalc.quit()
