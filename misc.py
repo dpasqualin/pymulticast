@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re,sys,socket,threading
+from time import sleep
 
 class Timeout(threading.Thread):
     """ Roda em uma thread separada o metodo timeoutFunction que deve
