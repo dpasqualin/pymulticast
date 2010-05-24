@@ -5,10 +5,10 @@ import sys,re,socket
 
 class OnlineCalcClient(McastServiceClient):
     def run(self,port,request):
-        exp = "^[0-9()\+\-\/\*]*$"
+        exp = "^[0-9\.()\+\-\/\*]*$"
         if re.match(exp,request):
             request = "%s:%s"%(port,request)
-            return McastServiceClient.run(self,request)
+            return McastServiceClient.run(self,request)[0]
         else:
             return None
 
@@ -33,7 +33,7 @@ def main(argc, argv):
     while True:
         try:
             calc = raw_input("> ")
-            print onlinecalc.run(udpPort,calc)[0]
+            print onlinecalc.run(udpPort,calc)
         except (EOFError,KeyboardInterrupt):
             print ""
             break
