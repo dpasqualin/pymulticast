@@ -6,6 +6,12 @@ from time import sleep,asctime
 CONFFILE = "mcast.conf"
 LOGFILE = "mcast.log"
 
+LOGERROR=0
+LOGWARNING=1
+LOGCONTROL=2
+LOGMESSAGE=3
+LOGDEBUG=4
+
 def readConf():
     """ Le arquivo de configuracao mcast.conf e retorna dicionario
         {opcao:valor} """
