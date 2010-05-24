@@ -1,6 +1,31 @@
 #!/usr/bin/env python
 
-import re,sys,socket
+import re,sys,socket,threading
+
+class Timeout(threading.Thread):
+    """ Roda em uma thread separada o metodo timeoutFunction que deve
+    existir dentro da classe passada como argumento em objMethod. O
+    argumento timeout determina de quanto em quanto tempo essa funcao deve
+    ser executada """
+    def __init__(self, objMethod, timeout):
+        threading.Thread.__init__(self)
+        self.__objMethod = objMethod
+        self.__timeout = timeout
+        self.__quit = False
+
+    def run(self):
+        while not self.__quit:
+            self.runMethod()
+            sleep(self.getTimeout())
+
+    def quit(self):
+        self.__quit = True
+
+    def getTimeout(self):
+        return self.__timeout
+
+    def runMethod(self):
+        return self.__objMethod()
 
 class Server(object):
     """ Armazena informacoes sobre um servidor """

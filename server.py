@@ -2,36 +2,11 @@
 
 from mcastservice import McastServiceServer
 import re,sys,socket,threading
-from misc import Server,Request
+from misc import Server,Request,Timeout
 from time import sleep
 
 # timeout do heartbeat, em segundos
 TOUT_HEARTBEAT = 5.0
-
-class Timeout(threading.Thread):
-    """ Roda em uma thread separada o metodo timeoutFunction que deve
-    existir dentro da classe passada como argumento em objMethod. O
-    argumento timeout determina de quanto em quanto tempo essa funcao deve
-    ser executada """
-    def __init__(self, objMethod, timeout):
-        threading.Thread.__init__(self)
-        self.__objMethod = objMethod
-        self.__timeout = timeout
-        self.__quit = False
-
-    def run(self):
-        while not self.__quit:
-            self.runMethod()
-            sleep(self.getTimeout())
-
-    def quit(self):
-        self.__quit = True
-
-    def getTimeout(self):
-        return self.__timeout
-
-    def runMethod(self):
-        return self.__objMethod()
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
     def __init__(self, severId, mcastPort, mcastAddr, serverFile):
