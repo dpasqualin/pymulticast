@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 from mcastservice import McastServiceClient
-import sys,re
+import sys,re,socket
 
 class OnlineCalcClient(McastServiceClient):
-    def run(self,request):
+    def run(self,port,request):
         exp = "^[0-9()\+\-\/\*]*$"
         if re.match(exp,request):
+            request = "%s:%s"%(port,request)
             return McastServiceClient.run(self,request)
         else:
             return None
@@ -32,10 +33,10 @@ def main(argc, argv):
     while True:
         try:
             calc = raw_input("> ")
-            print onlinecalc.run(calc)
+            print onlinecalc.run(udpPort,calc)[0]
         except (EOFError,KeyboardInterrupt):
             print ""
-            return 0
+            break
 
     return 0
 
