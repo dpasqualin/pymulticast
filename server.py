@@ -38,9 +38,9 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reREQUEST = re.compile("^(?P<request>[0-9()\+\-\/\*]*)$")
 
         # Criando timeout para o heartbeat
-        tout = Timeout(self.sendHeartBeat,TOUT_HEARTBEAT)
-        tout.start()
-        self.addTimeout(tout)
+        self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
+        # Criando timeout para o atualizar status dos servidores
+        self.__createTimeout(self.updateHeartBeat,TOUT_DEAD)
 
         while not self.__quit:
             (data,(ip,port)) = self.getRequest()
@@ -58,6 +58,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 data = "%s:%s:%s" %(ip,str(port),data.group("request"))
                 request = Request(data)
                 self.addRequest(request)
+
+    def __createTimeout(self,method,tout):
+        tout = Timeout(method,tout)
+        tout.start()
+        self.addTimeout(tout)
 
     def readServerFile(self,serverFile):
         """ Le um arquivo contendo os servidores que serao utilizados e
