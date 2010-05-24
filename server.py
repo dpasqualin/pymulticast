@@ -3,13 +3,12 @@
 from mcastservice import McastServiceServer
 import re,sys,socket,threading
 from misc import Server,Request,Timeout
-from time import sleep
 
 # timeout do heartbeat, em segundos
 TOUT_HEARTBEAT = 5.0
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
-    def __init__(self, severId, mcastPort, mcastAddr, serverFile):
+    def __init__(self, serverId, mcastPort, mcastAddr, serverFile):
 
         threading.Thread.__init__(self)
         McastServiceServer.__init__(self,mcastPort,mcastAddr)
@@ -38,10 +37,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         self.addTimeout(tout)
 
         while not self.__quit:
-            ((ip,port),data) = getRequest()
+            (data,(ip,port)) = self.getRequest()
+            print data,ip,port
             if reALIVE.match(data):
                 data = reALIVE.search(data)
-                self.hearBeatReceived(int(data.group("id")))
+                self.heartBeatReceived(int(data.group("id")))
             elif reCONFIRM.match(data):
                 data = reCONFIRM.search(data)
                 serverID = data.group("id")
@@ -62,7 +62,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             # Se a linha nao eh um comentario nem vazia
             if not re.match("^(#|$)",line):
                 sid,shostname,sport = line.split()
-                serverList[sid] = Server(sid,shostname,sport)
+                serverList[int(sid)] = Server(sid,shostname,sport)
 
         return serverList
 
@@ -101,14 +101,14 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         """ Retorna o menor servidor ativo """
         for idx in self.getServerDict().keys().sort():
             if self.getServerDict()[idx].isAlive():
-                return self.getServerDict()[idx]
+                return self.getServerDict()[idx].getID()
 
     def sendReply(self,request):
         """ Computa request e (se sou o servidor com menor ID vivo)
         envia resposta para o cliente, ao mesmo tempo
         que comunica os outros servidores do grupo multicast que a
         requisicao request foi respondida. """
-        if self.whoAnswers() == self.getMyServer():
+        if self.whoAnswers() == self.getServer():
             reply = eval(request.getRequest())
             host,port = request.getHost(),request.getPort()
             McastServiceServer.sendReply(self,host,port,reply)
@@ -117,10 +117,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def sendReplyConfirm(self,request):
         """ Envia por multicast confirmacao de resposta da requisicao
         "request", que eh do tipo "Request" """
-        self.getMcast().send("%d:CONFIRM:%s"%(self.getServer(),request))
+        serverID = self.getServer().getID()
+        self.getMcast().send("%d:CONFIRM:%s"%(serverID,request))
 
-    def getMyServer(self):
-        return self.__server
+    def getServer(self):
+        return self.getServerDict()[self.__server]
 
     def getServerDict(self):
         return self.__serverDict
