@@ -45,12 +45,12 @@ class McastServiceClient(object):
         """ Envia requisicao "request" via multicast e aguarda resposta
         via udp. """
         self.__sendToMcast(request)
-        return self.readFromUDP()
+        return self.__readFromUDP()
 
     def __sendToMcast(self,request):
         self.getMcast().send(request)
 
-    def __readFromUDP():
+    def __readFromUDP(self):
         return self.getUDP().read()
 
     def getMcast(self):
