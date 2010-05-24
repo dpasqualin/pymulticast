@@ -33,7 +33,8 @@ def main(argc, argv):
     while True:
         try:
             calc = raw_input("> ")
-            print onlinecalc.run(udpPort,calc)
+            if calc:
+                print onlinecalc.run(udpPort,calc)
         except (EOFError,KeyboardInterrupt):
             print ""
             break
