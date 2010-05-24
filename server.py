@@ -158,7 +158,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         if self.whoAnswers() == self.getServer():
             try:
                 reply = eval(request.getRequest())
-            except (SyntaxError,ZeroDivisionError),error:
+            except (SyntaxError,ZeroDivisionError,TypeError),error:
                 reply = error
             self.writeLog(LOGCONTROL,"Respondendo %s = %s"%(request,reply))
             host,port = request.getIP(),request.getPort()
@@ -222,4 +222,3 @@ if __name__ == "__main__":
         sys.exit(main(len(sys.argv),sys.argv))
     except:
         raise
-
