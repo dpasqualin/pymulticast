@@ -6,7 +6,7 @@ from misc import Server,Request,Timeout,Log
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
 
 # O HeartBeat do servidor sera enviado de acordo com este intervalo
-TOUT_HEARTBEAT = 1.0
+TOUT_HEARTBEAT = 2.0
 # Se um servidor qualquer nao enviar um HeartBeat nesse intervalo de tempo
 # ele deve ser marcado como "morto"
 TOUT_DEAD = 5*TOUT_HEARTBEAT
@@ -58,6 +58,10 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
                 data = "%s:%s:%s" %(ip,str(port),data.group("request"))
                 request = Request(data)
                 self.addRequest(request)
+            else:
+                msg = "Request invalido (%s,%d):%s"%(ip,port,data)
+                self.writeLog(LOGWARNING,msg)
+            time.sleep(0.01)
 
     def __createTimeout(self,method,tout):
         tout = Timeout(method,tout)
@@ -169,7 +173,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 def usage():
     print "%s serverID mcastPort mcastAddr serverFile" % sys.argv[0]
     print "\tserverID: id do servidor que sera aberto, deve estar presente"
-    print "na lista de servidores informada no arquivo serverFile."
+    print "\t\tna lista de servidores informada no arquivo serverFile."
     print "\tmcastPort: porta do servidor para o multicast."
     print "\tmcastAddr: endereco IP do servidor multicast"
     print "\tserverFile: arquivo com pares <id hostname porta>"
@@ -194,7 +198,7 @@ def main(argc,argv):
 
     return 0
 
-if __name__ == "__main__"
+if __name__ == "__main__":
     try:
         sys.exit(main(len(sys.argv),sys.argv))
     except:
