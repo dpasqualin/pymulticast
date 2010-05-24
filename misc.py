@@ -118,9 +118,13 @@ class Request(object):
         request eh no formato -> IP:PORT:REQUEST """
     def __init__(self,request):
         self.__IP, self.__port, self.__request = request.split(":")
+        self.__hostName = socket.gethostbyaddr(self.__IP)[0]
 
     def getIP(self):
         return self.__IP
+
+    def getHostname(self):
+        return self.__hostName
 
     def getPort(self):
         return self.__port
