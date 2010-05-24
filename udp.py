@@ -35,7 +35,6 @@ class UDPServer(UDPParams):
         self.__connect()
 
     def __connect(self):
-        print "sou server"
         self.getSocket().bind(self.getAddr())
 
 class UDPClient(UDPParams):
