@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import re,sys,socket,threading
-from time import sleep,asctime
+from time import sleep,asctime,time
 
 CONFFILE = "mcast.conf"
 LOGFILE = "mcast.log"
@@ -77,6 +77,13 @@ class Server(object):
         self.__isAlive = isAlive
         self.__port = int(serverPort)
         self.__ip = socket.gethostbyname(serverHostname)
+        self.__lastContact = 0.0
+
+    def getLastContact(self):
+        return self.__lastContact
+
+    def setLastContact(self):
+        self.__lastContact = time()
 
     def getIP(self):
         return self.__ip
@@ -94,6 +101,7 @@ class Server(object):
         return self.__isAlive
 
     def setAlive(self):
+        self.setLastContact()
         self.__isAlive = True
 
     def setNotAlive(self):
