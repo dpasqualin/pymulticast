@@ -39,7 +39,7 @@ class McastServiceClient(object):
         self.__mcastClt = McastClient(mcastPort,mcastAddr)
 
         # O Socket udp aguarda pela resposta dos servidores
-        self.__udpSrv = UDPServer(udpHost,udpPort)
+        self.__udpSrv = UDPServer(udpAddr,udpPort)
 
     def run(self, request):
         """ Envia requisicao "request" via multicast e aguarda resposta
