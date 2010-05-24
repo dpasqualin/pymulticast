@@ -27,9 +27,9 @@ def readConf():
 class Log(object):
     """ Salva mensagens no arquivo de log LOGFILE, respeitando o verboso
     desejado escrito em CONFFILE """
-    def __init__(self):
+    def __init__(self,logFile=LOGFILE):
         self.__conf = readConf()
-        self.__file = open(LOGFILE,"a")
+        self.__file = open(logFile,"a")
         self.verbose = self.__conf["verbose"]
 
     def log(self, verbose, msg):
