@@ -11,7 +11,7 @@ class UDPParams(object):
         self.__addr = (self.getHost(),self.getPort())
 
     def send(self, msg):
-        self.getSocket().sendto(msg,self.getAddr())
+        self.getSocket().sendto(str(msg),self.getAddr())
 
     def read(self):
         return self.getSocket().recvfrom(1024)
