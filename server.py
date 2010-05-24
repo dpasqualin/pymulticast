@@ -12,12 +12,12 @@ TOUT_HEARTBEAT = 2.0
 TOUT_DEAD = 5*TOUT_HEARTBEAT
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
-    def __init__(self, serverId, mcastPort, mcastAddr, serverFile):
+    def __init__(self, serverID, mcastPort, mcastAddr, serverFile):
 
         threading.Thread.__init__(self)
         McastServiceServer.__init__(self,mcastPort,mcastAddr)
         self.__serverDict = self.readServerFile(serverFile)
-        self.__server = int(serverId)
+        self.__server = int(serverID)
         self.__requestList = []
         self.__timeoutList = []
         self.__log = Log()
@@ -32,10 +32,13 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 
         # Expressoes regulares de possiveis mensagens
         reID = "(?P<id>[0-9]+)"
+        rePORT = "(?P<port>[0-9]{4,5})"
         reREQCONF = "(?P<request>.*)"
+        reREQ = "(?P<request>[0-9()\+\-\/\*]*)"
+
         reALIVE = re.compile("^%s:ALIVE$" % reID)
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
-        reREQUEST = re.compile("^(?P<request>[0-9()\+\-\/\*]*)$")
+        reREQUEST = re.compile("^%s:%s$"%(rePORT,reREQ))
 
         # Criando timeout para o heartbeat
         self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
@@ -51,17 +54,19 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             elif reCONFIRM.match(data):
                 data = reCONFIRM.search(data)
                 serverID = data.group("id")
-                request = data.group("request")
-                self.requestSentby(serverId,request)
+                request = Request(data.group("request"))
+                self.requestSentby(serverID,request)
             elif reREQUEST.match(data):
                 data = reREQUEST.search(data)
-                data = "%s:%s:%s" %(ip,str(port),data.group("request"))
+                port = data.group("port")
+                data = "%s:%s:%s" %(ip,port,data.group("request"))
                 request = Request(data)
                 self.addRequest(request)
+                self.sendReply(request)
             else:
                 msg = "Request invalido (%s,%d):%s"%(ip,port,data)
                 self.writeLog(LOGWARNING,msg)
-            time.sleep(0.01)
+            time.sleep(0.1)
 
     def __createTimeout(self,method,tout):
         tout = Timeout(method,tout)
@@ -94,7 +99,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 
         self.writeLog(LOGMESSAGE,"Request:%s"%request)
         # TODO: tratar request
-        self.requestList.append(request)
+        self.__requestList.append(request)
 
     def removeRequest(self, request):
         """ Remove request da lista """
@@ -132,9 +137,9 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 
     def whoAnswers(self):
         """ Retorna o menor servidor ativo """
-        for idx in self.getServerDict().keys().sort():
+        for idx in sorted(self.getServerDict().keys()):
             if self.getServerDict()[idx].isAlive():
-                return self.getServerDict()[idx].getID()
+                return self.getServerDict()[idx]
 
     def sendReply(self,request):
         """ Computa request e (se sou o servidor com menor ID vivo)
@@ -144,7 +149,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         if self.whoAnswers() == self.getServer():
             reply = eval(request.getRequest())
             self.writeLog(LOGCONTROL,"Respondendo %s = %s"%(request,reply))
-            host,port = request.getHost(),request.getPort()
+            host,port = request.getIP(),request.getPort()
             McastServiceServer.sendReply(self,host,port,reply)
             self.sendReplyConfirm(request)
 
@@ -192,9 +197,8 @@ def main(argc,argv):
     # Inicia servidor
     try:
         onlinecalc.start()
-        onlinecalc.join()
         raw_input("ctrl+c para sair...")
-    except KeyboardInterrupt:
+    except (EOFError,KeyboardInterrupt):
         print "Saindo"
         onlinecalc.quit()
 
