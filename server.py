@@ -78,6 +78,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         return serverList
 
     def writeLog(self,verbose,msg):
+        """ Escreve uma mensagem no log """
         msg = "Server-%d %s"%( self.getServer().getID(),msg )
         self.__log.log(verbose,msg)
 
@@ -164,3 +165,38 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         for tout in self.getTimeoutList():
             tout.quit()
         self.writeLog(LOGDEBUG,"Morto")
+
+def usage():
+    print "%s serverID mcastPort mcastAddr serverFile" % sys.argv[0]
+    print "\tserverID: id do servidor que sera aberto, deve estar presente"
+    print "na lista de servidores informada no arquivo serverFile."
+    print "\tmcastPort: porta do servidor para o multicast."
+    print "\tmcastAddr: endereco IP do servidor multicast"
+    print "\tserverFile: arquivo com pares <id hostname porta>"
+
+def main(argc,argv):
+    if argc != 5:
+        usage()
+        sys.exit(1)
+
+    # Argumentos
+    serverID,mcastPort,mcastAddr,serverFile = argv[1:]
+
+    # Cria servidor
+    onlinecalc = OnlineCalcServer(serverID,mcastPort,mcastAddr,serverFile)
+
+    # Inicia servidor
+    try:
+        onlinecalc.start()
+        onlinecalc.join()
+    except KeyboardInterrupt:
+        pass
+
+    return 0
+
+if __name__ == "__main__"
+    try:
+        sys.exit(main(len(sys.argv),sys.argv))
+    except:
+        raise
+
