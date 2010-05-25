@@ -213,7 +213,8 @@ def main(argc,argv):
     # Inicia servidor
     try:
         onlinecalc.start()
-        raw_input("ctrl+c para sair...")
+        while True:
+            raw_input("ctrl+c para sair...")
     except (EOFError,KeyboardInterrupt):
         print "Saindo"
         onlinecalc.quit()
