@@ -23,6 +23,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         self.__log = Log("server%d.log"%self.__server)
         self.writeLog(LOGCONTROL,"Iniciando...")
 
+        self.getServer().setAlive()
+
         # Sinaliza quando a thread tera que ser fechada
         self.__quit = False
 
@@ -147,7 +149,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def whoAnswers(self):
         """ Retorna o menor servidor ativo """
         for idx in sorted(self.getServerDict().keys()):
-            if self.getServerDict()[idx].isAlive():
+            server = self.getServerDict()[idx]
+            if server.imalive():
                 return self.getServerDict()[idx]
 
     def sendReply(self,request):
