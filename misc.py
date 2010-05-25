@@ -71,10 +71,10 @@ class Timeout(threading.Thread):
 
 class Server(object):
     """ Armazena informacoes sobre um servidor """
-    def __init__(self,serverID,serverHostname,serverPort,isAlive=False):
+    def __init__(self,serverID,serverHostname,serverPort,alive=False):
         self.__id = int(serverID)
         self.__hostname = serverHostname
-        self.__isAlive = isAlive
+        self.__alive = alive
         self.__port = int(serverPort)
         self.__ip = socket.gethostbyname(serverHostname)
         self.__lastContact = 0.0
@@ -97,15 +97,15 @@ class Server(object):
     def getPort(self):
         return self.__port
 
-    def isAlive(self):
-        return self.__isAlive
+    def imalive(self):
+        return self.__alive
 
     def setAlive(self):
         self.setLastContact()
-        self.__isAlive = True
+        self.__alive = True
 
     def setNotAlive(self):
-        self.isAlive = False
+        self.imAlive = False
 
     def __cmp__(self, x):
         if self.getID() == x.getID():
