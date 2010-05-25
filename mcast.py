@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
     ANY = "0.0.0.0"
     SENDERPORT=1501
-    MCAST_ADDR = "224.168.2.9"
+    MCAST_ADDR = "224.0.0.1"
     MCAST_PORT = 1600
     TTL=1 # Nao sera repassado a nenhum router
 
