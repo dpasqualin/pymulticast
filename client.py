@@ -2,6 +2,7 @@
 
 from mcastservice import McastServiceClient
 import sys,re,socket
+from misc import readConf
 
 class OnlineCalcClient(McastServiceClient):
     def run(self,port,request):
@@ -18,12 +19,16 @@ def usage():
     print "\tUm <enter> separa cada calculo."
 
 def main(argc, argv):
-    if argc != 5:
+    if argc > 2:
         usage()
         sys.exit(1)
 
     # Argumentos
-    mcastPort,mcastAddr,udpPort,udpAddr = argv[1:]
+    opts = readConf()
+    mcastPort = int(opts["mcast_port"])
+    mcastAddr = opts["mcast_addr"]
+    udpPort = int(opts["udp_port"])
+    udpAddr = len(sys.argv)>1 and sys.argv[1] or socket.gethostname()
 
     # Cria conexao com o multicast e abre udp para resposta
     onlinecalc = OnlineCalcClient(mcastPort,mcastAddr,udpPort,udpAddr)
