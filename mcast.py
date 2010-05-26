@@ -2,6 +2,7 @@
 
 import socket,time,threading,os,signal
 from misc import Log,LOGERROR
+import struct
 
 def waitrequest(*args):
     """ Executa funcao "handle" para cada mensagem recebida.
@@ -22,7 +23,7 @@ class McastParams(object):
     """ Esta classe armazena e retorna alguns parametros e funcoes comuns ao
     cliente e servidor multicast. O objetivo principal eh evitar redundancia
     de codigo """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None):
+    def __init__(self,port,addr,sbound="",sport=None):
 
         self.__port = int(port)
         self.__addr = addr
@@ -88,7 +89,7 @@ class McastClient(McastParams):
             sbound: Endereco do servidor
             sport: Porta do servidor
     """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,handle=None):
+    def __init__(self,port,addr,sbound="",sport=None,handle=None):
         McastParams.__init__(self,port,addr,sbound,sport)
         self.__socket = self.__connect()
 
@@ -104,8 +105,7 @@ class McastClient(McastParams):
         """ Abre conexao  """
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                              socket.IPPROTO_UDP)
-        #The sender is bound on (serverbound:serverport)
-        sock.bind((self.getServerBound(),self.getServerPort()))
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
 
         return sock
 
@@ -125,7 +125,7 @@ class McastServer(McastParams):
             sport: Porta do servidor
     """
 
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,handle=None):
+    def __init__(self,port,addr,sbound="",sport=None,handle=None):
         McastParams.__init__(self,port,addr,sbound,sport)
         self.__socket = self.__connect()
 
@@ -138,10 +138,10 @@ class McastServer(McastParams):
             self.__t = None
 
     def __connect(self):
-
         # Create a UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                              socket.IPPROTO_UDP)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # Bind to the port that we know will read multicast data
         sbound,sport = self.getServerBound(),self.getPort()
@@ -150,11 +150,9 @@ class McastServer(McastParams):
         # Tell the kernel that we want to add ourselves to a multicast group
         # The address for the multicast group is the third param
         mcastaddr = self.getAddr()
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
-                        socket.inet_aton(self.getAddr())+
-                        socket.inet_aton(self.getServerBound()))
-
-        sock.setblocking(0)
+        mreq = struct.pack('4sl', socket.inet_aton(mcastaddr),
+                           socket.INADDR_ANY)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
         return sock
 
@@ -171,9 +169,9 @@ if __name__ == "__main__":
 
     import sys
 
-    ANY = "0.0.0.0"
+    ANY = ""
     SENDERPORT=1501
-    MCAST_ADDR = "224.0.0.1"
+    MCAST_ADDR = "224.0.0.2"
     MCAST_PORT = 1600
     TTL=1 # Nao sera repassado a nenhum router
 
