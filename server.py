@@ -9,7 +9,10 @@ from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
 TOUT_HEARTBEAT = 2.0
 # Se um servidor qualquer nao enviar um HeartBeat nesse intervalo de tempo
 # ele deve ser marcado como "morto"
-TOUT_DEAD = 5*TOUT_HEARTBEAT
+TOUT_DEAD = 2*TOUT_HEARTBEAT
+# Timeout para verificar se uma requisicao foi de fato enviada e decidir
+# quem sera o novo servidor a tentar envia-la
+TOUT_RETRANS = TOUT_DEAD+1
 
 class OnlineCalcServer(McastServiceServer,threading.Thread):
     def __init__(self, serverID, mcastPort, mcastAddr, serverFile):
@@ -83,6 +86,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def serverQuiting(self, serverID):
         """ Quando um servidor vai sair seta ele como morto """
         if self.getServer() != self.getServerDict()[serverID]:
+            msg = "Servidor %d desconectou"%( serverID )
+            self.writeLog(LOGCONTROL,msg)
             self.missingHeartBeat(serverID)
 
     def readServerFile(self,serverFile):
@@ -157,13 +162,13 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             if server.imalive():
                 return self.getServerDict()[idx]
 
-    def sendReply(self,request):
+    def sendReply(self,request,force=False):
         """ Computa request e (se sou o servidor com menor ID vivo)
         envia resposta para o cliente, ao mesmo tempo
         que comunica os outros servidores do grupo multicast que a
         requisicao request foi respondida. """
         willAnswer = self.whoAnswers()
-        if willAnswer == self.getServer():
+        if force or willAnswer == self.getServer():
             try:
                 reply = eval(request.getRequest())
             except (SyntaxError,ZeroDivisionError,TypeError),error:
@@ -174,7 +179,17 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             self.sendReplyConfirm(request)
         else:
             msg = "Server-%d respondera %s" %(willAnswer.getID(),request)
+            # Cria timeout para verificar se mensagem foi de fato enviada
+            threading.Timer(TOUT_RETRANS,self.reTransfer,(request,)).start()
             self.writeLog(LOGCONTROL,msg)
+
+    def reTransfer(self,request):
+        if request in self.__requestList:
+            for i in range(len(self.getServerDict())):
+                if self.whoAnswers() == self.getServer():
+                    self.sendReply(request,force=True)
+                    break
+                time.sleep(TOUT_RETRANS)
 
     def sendReplyConfirm(self,request):
         """ Envia por multicast confirmacao de resposta da requisicao
