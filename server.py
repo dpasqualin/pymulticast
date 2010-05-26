@@ -73,7 +73,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             else:
                 msg = "Request invalido (%s,%d):%s"%(ip,port,data)
                 self.writeLog(LOGWARNING,msg)
-            time.sleep(0.01)
+            time.sleep(0.001)
 
     def __createTimeout(self,method,tout):
         tout = Timeout(method,tout)
