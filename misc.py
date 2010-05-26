@@ -107,7 +107,7 @@ class Server(object):
         self.__alive = True
 
     def setNotAlive(self):
-        self.imAlive = False
+        self.__alive = False
 
     def __cmp__(self, x):
         if self.getID() == x.getID():
