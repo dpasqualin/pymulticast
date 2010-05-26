@@ -2,7 +2,7 @@
 
 from mcastservice import McastServiceServer
 import re,sys,socket,threading,time
-from misc import Server,Request,Timeout,Log
+from misc import Server,Request,Timeout,Log,readConf
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
 
 # O HeartBeat do servidor sera enviado de acordo com este intervalo
@@ -73,7 +73,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             else:
                 msg = "Request invalido (%s,%d):%s"%(ip,port,data)
                 self.writeLog(LOGWARNING,msg)
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     def __createTimeout(self,method,tout):
         tout = Timeout(method,tout)
@@ -192,20 +192,21 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         self.writeLog(LOGDEBUG,"Morto")
 
 def usage():
-    print "%s serverID mcastPort mcastAddr serverFile" % sys.argv[0]
+    print "%s serverID serverFile" % sys.argv[0]
     print "\tserverID: id do servidor que sera aberto, deve estar presente"
     print "\t\tna lista de servidores informada no arquivo serverFile."
-    print "\tmcastPort: porta do servidor para o multicast."
-    print "\tmcastAddr: endereco IP do servidor multicast"
     print "\tserverFile: arquivo com pares <id hostname porta>"
 
 def main(argc,argv):
-    if argc != 5:
+    if argc != 3:
         usage()
         sys.exit(1)
 
     # Argumentos
-    serverID,mcastPort,mcastAddr,serverFile = argv[1:]
+    serverID,serverFile = argv[1:]
+    opts = readConf()
+    mcastPort = opts["mcast_port"]
+    mcastAddr = opts["mcast_addr"]
 
     # Cria servidor
     onlinecalc = OnlineCalcServer(serverID,mcastPort,mcastAddr,serverFile)
