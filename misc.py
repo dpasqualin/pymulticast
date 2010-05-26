@@ -30,18 +30,20 @@ class Log(object):
     def __init__(self,logFile=LOGFILE):
         self.__conf = readConf()
         self.__file = open(logFile,"a")
-        self.verbose = self.__conf["verbose"]
+        self.verbose = int(self.__conf["verbose"])
 
     def log(self, verbose, msg):
         """ Escreve mensagem de log no arquivo se verbose for <= ao verbose
         definido no arquivo de configuracao """
-        if verbose <= self.verbose:
+        if int(verbose) <= self.verbose:
             timestamp = asctime()[4:].replace(":","")
-            msg = "%s: %s\n" % (timestamp,msg)
+            msg = "%s: %s" % (timestamp,msg)
             self.__write(msg)
+            if self.verbose == 10:
+                print msg
 
     def __write(self,msg):
-        self.__file.write(msg)
+        self.__file.write(msg+"\n")
         self.__file.flush()
 
 class Timeout(threading.Thread):
