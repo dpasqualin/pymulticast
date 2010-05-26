@@ -171,8 +171,10 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         if force or willAnswer == self.getServer():
             try:
                 reply = eval(request.getRequest())
-            except (SyntaxError,ZeroDivisionError,TypeError),error:
-                reply = error
+            except (SyntaxError,TypeError),error:
+                reply = "ERRO: "+error
+            except ZeroDivisionError:
+                reply = "ERRO: Ocorreu uma divisao por zero."
             self.writeLog(LOGCONTROL,"Respondendo %s = %s"%(request,reply))
             host,port = request.getIP(),request.getPort()
             McastServiceServer.sendReply(self,host,port,reply)
