@@ -186,12 +186,12 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             self.writeLog(LOGCONTROL,msg)
 
     def reTransfer(self,request):
-        if request in self.__requestList:
-            for i in range(len(self.getServerDict())):
+        for i in range(len(self.getServerDict())):
+            if request in self.__requestList:
                 if self.whoAnswers() == self.getServer():
                     self.sendReply(request,force=True)
                     break
-                time.sleep(TOUT_RETRANS)
+            time.sleep(TOUT_RETRANS)
 
     def sendReplyConfirm(self,request):
         """ Envia por multicast confirmacao de resposta da requisicao
