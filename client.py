@@ -39,7 +39,10 @@ def main(argc, argv):
         try:
             calc = raw_input("> ")
             if calc:
-                print onlinecalc.run(udpPort,calc)
+                try:
+                    print onlinecalc.run(udpPort,calc)
+                except socket.timeout:
+                    print "Sem resposta (timeout estourou)"
         except (EOFError,KeyboardInterrupt):
             print ""
             break

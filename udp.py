@@ -2,6 +2,8 @@
 
 from socket import *
 
+UDP_CLIENT_TIMEOUT=10.0
+
 class UDPParams(object):
 
     def __init__(self,host,port):
@@ -30,8 +32,9 @@ class UDPParams(object):
 
 class UDPServer(UDPParams):
 
-    def __init__(self,host,port):
+    def __init__(self,host,port,timeout=UDP_CLIENT_TIMEOUT):
         UDPParams.__init__(self,host,port)
+        self.getSocket().settimeout(timeout)
         self.__connect()
 
     def __connect(self):
