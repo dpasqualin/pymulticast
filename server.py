@@ -115,17 +115,18 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def removeRequest(self, request):
         """ Remove request da lista """
         if request in self.__requestList:
-            self.writeLog(LOGMESSAGE,"Request processado:%s"%request)
             self.__requestList.remove(request)
 
-    def requestSentby(self, serverID, request):
+    def requestSentby(self, sID, request):
         """ Confirmacao de que o servidor serverID respondeu a requisicao
         request, que deve ser removida da lista """
+        self.writeLog(LOGMESSAGE,"Servidor %s Respondeu %s"%(sID,request))
         self.removeRequest(request)
 
     def heartBeatReceived(self,serverID):
         """ Marca servidor serverID como vivo """
-        self.writeLog(LOGCONTROL,"HeartBeatReceived:%d"%serverID)
+        if serverID != self.getServer().getID():
+            self.writeLog(LOGCONTROL,"HeartBeatReceived:%d"%serverID)
         self.getServerDict()[int(serverID)].setAlive()
 
     def updateHeartBeat(self):
@@ -143,7 +144,6 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
 
     def sendHeartBeat(self):
         """ Envia mensagem ao multicast informando que esta vivo """
-        self.writeLog(LOGCONTROL,"HeartBeatSent")
         self.getMcast().send("%d:ALIVE"%self.getServer().getID())
 
     def whoAnswers(self):
@@ -158,7 +158,8 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         envia resposta para o cliente, ao mesmo tempo
         que comunica os outros servidores do grupo multicast que a
         requisicao request foi respondida. """
-        if self.whoAnswers() == self.getServer():
+        willAnswer = self.whoAnswers()
+        if willAnswer == self.getServer():
             try:
                 reply = eval(request.getRequest())
             except (SyntaxError,ZeroDivisionError,TypeError),error:
@@ -167,6 +168,9 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
             host,port = request.getIP(),request.getPort()
             McastServiceServer.sendReply(self,host,port,reply)
             self.sendReplyConfirm(request)
+        else:
+            msg = "Server-%d respondera %s" %(willAnswer.getID(),request)
+            self.writeLog(LOGCONTROL,msg)
 
     def sendReplyConfirm(self,request):
         """ Envia por multicast confirmacao de resposta da requisicao
