@@ -117,10 +117,14 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         if request in self.__requestList:
             self.__requestList.remove(request)
 
-    def requestSentby(self, sID, request):
+    def requestSentby(self, serverID, request):
         """ Confirmacao de que o servidor serverID respondeu a requisicao
         request, que deve ser removida da lista """
-        self.writeLog(LOGMESSAGE,"Servidor %s Respondeu %s"%(sID,request))
+        if int(serverID) != self.getServer().getID():
+            msg = "Servidor %s Respondeu %s"%(serverID,request)
+        else:
+            msg = "Respondi %s"%(request)
+        self.writeLog(LOGMESSAGE,msg)
         self.removeRequest(request)
 
     def heartBeatReceived(self,serverID):
