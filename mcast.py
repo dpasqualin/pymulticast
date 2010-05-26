@@ -22,13 +22,12 @@ class McastParams(object):
     """ Esta classe armazena e retorna alguns parametros e funcoes comuns ao
     cliente e servidor multicast. O objetivo principal eh evitar redundancia
     de codigo """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None, ttl=5):
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None):
 
         self.__port = int(port)
         self.__addr = addr
         self.__serverbound = sbound
         self.__serverport = sport or int(port)-1
-        self.__ttl = int(ttl)
         self.__log = Log()
         self.__quit = False
 
@@ -46,9 +45,6 @@ class McastParams(object):
 
     def getSocket(self):
         return self.__socket
-
-    def getTTL(self):
-        return self.__ttl
 
     def getPort(self):
         return self.__port
@@ -91,11 +87,9 @@ class McastClient(McastParams):
             addr: Endereco de multicast
             sbound: Endereco do servidor
             sport: Porta do servidor
-            ttl: TTL
     """
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
-                 ttl=5, handle=None):
-        McastParams.__init__(self,port,addr,sbound,sport,ttl)
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,handle=None):
+        McastParams.__init__(self,port,addr,sbound,sport)
         self.__socket = self.__connect()
 
         # Cria thread para receber mensagens
@@ -113,11 +107,6 @@ class McastClient(McastParams):
         #The sender is bound on (serverbound:serverport)
         sock.bind((self.getServerBound(),self.getServerPort()))
 
-        # Tell the kernel that we want to multicast and that the data is
-        # sent to everyone (255 is the level of multicasting)
-        ttl = self.getTTL()
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL,ttl)
-
         return sock
 
     def getSocket(self):
@@ -134,12 +123,10 @@ class McastServer(McastParams):
             addr: Endereco de multicast
             sbound: Endereco do servidor
             sport: Porta do servidor
-            ttl: TTL
     """
 
-    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,
-                 ttl=5,handle=None):
-        McastParams.__init__(self,port,addr,sbound,sport,ttl)
+    def __init__(self,port,addr,sbound="0.0.0.0",sport=None,handle=None):
+        McastParams.__init__(self,port,addr,sbound,sport)
         self.__socket = self.__connect()
 
         # Cria thread para receber mensagens
@@ -155,16 +142,10 @@ class McastServer(McastParams):
         # Create a UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                              socket.IPPROTO_UDP)
-        # Allow multiple sockets to use the same PORT number
-        ttl = self.getTTL()
-        sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,ttl)
 
         # Bind to the port that we know will read multicast data
         sbound,sport = self.getServerBound(),self.getPort()
         sock.bind((sbound,sport))
-
-        # Tell the kernel that we are a multicast socket
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
 
         # Tell the kernel that we want to add ourselves to a multicast group
         # The address for the multicast group is the third param
