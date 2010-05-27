@@ -35,6 +35,20 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         """ Este metodo recebe as mensagens e endereca para o metodo
         correto """
 
+
+        # Criando timeout para o heartbeat
+        self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
+        # Criando timeout para o atualizar status dos servidores
+        self.__createTimeout(self.updateHeartBeat,TOUT_DEAD)
+
+        while not self.__quit:
+            (data,(ip,port)) = self.getRequest()
+            self.parserRequest(data,ip,port)
+
+    def parserRequest(self, data, ip, port):
+        """ Recebe uma requisicao e faz o parser executando os metodos
+        necessarios. """
+
         # Expressoes regulares de possiveis mensagens
         reID = "(?P<id>[0-9]+)"
         rePORT = "(?P<port>[0-9]{4,5})"
@@ -45,38 +59,29 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
         reREQUEST = re.compile("^%s:%s$"%(rePORT,reREQ))
         reQUIT = re.compile("^%s:QUIT$"% reID)
-
-        # Criando timeout para o heartbeat
-        self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
-        # Criando timeout para o atualizar status dos servidores
-        self.__createTimeout(self.updateHeartBeat,TOUT_DEAD)
-
-        while not self.__quit:
-            (data,(ip,port)) = self.getRequest()
-            if reALIVE.match(data):
-                data = reALIVE.search(data)
-                sid = int(data.group("id"))
-                self.heartBeatReceived(sid)
-            elif reCONFIRM.match(data):
-                data = reCONFIRM.search(data)
-                serverID = data.group("id")
-                request = Request(data.group("request"))
-                self.requestSentby(serverID,request)
-            elif reREQUEST.match(data):
-                data = reREQUEST.search(data)
-                port = data.group("port")
-                data = "%s:%s:%s" %(ip,port,data.group("request"))
-                request = Request(data)
-                self.addRequest(request)
-                self.sendReply(request)
-            elif reQUIT.match(data):
-                data = reQUIT.search(data)
-                serverID = int(data.group("id"))
-                self.serverQuiting(serverID)
-            else:
-                msg = "Request invalido (%s,%d):%s"%(ip,port,data)
-                self.writeLog(LOGWARNING,msg)
-            time.sleep(0.001)
+        if reALIVE.match(data):
+            data = reALIVE.search(data)
+            sid = int(data.group("id"))
+            self.heartBeatReceived(sid)
+        elif reCONFIRM.match(data):
+            data = reCONFIRM.search(data)
+            serverID = data.group("id")
+            request = Request(data.group("request"))
+            self.requestSentby(serverID,request)
+        elif reREQUEST.match(data):
+            data = reREQUEST.search(data)
+            port = data.group("port")
+            data = "%s:%s:%s" %(ip,port,data.group("request"))
+            request = Request(data)
+            self.addRequest(request)
+            self.sendReply(request)
+        elif reQUIT.match(data):
+            data = reQUIT.search(data)
+            serverID = int(data.group("id"))
+            self.serverQuiting(serverID)
+        else:
+            msg = "Request invalido (%s,%d):%s"%(ip,port,data)
+            self.writeLog(LOGWARNING,msg)
 
     def __createTimeout(self,method,tout):
         tout = Timeout(method,tout)
