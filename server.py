@@ -169,10 +169,11 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         requisicao request foi respondida. """
         willAnswer = self.whoAnswers()
         if force or willAnswer == self.getServer():
+            reply = str(self.getServer().getAddr())+": "
             try:
-                reply = eval(request.getRequest())
+                reply += str(eval(request.getRequest()))
             except (SyntaxError,TypeError),error:
-                reply = "ERRO: "+error
+                reply += "ERRO: "+str(error)
             except ZeroDivisionError:
                 reply = "ERRO: Ocorreu uma divisao por zero."
             self.writeLog(LOGCONTROL,"Respondendo %s = %s"%(request,reply))
