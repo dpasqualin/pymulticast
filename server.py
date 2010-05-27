@@ -4,7 +4,7 @@ from mcastservice import McastServiceServer
 import re,sys,socket,time
 from misc import Server,Request,Timeout,Log,readConf
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
-from threading import Thread
+from threading import Thread,Timer
 
 # O HeartBeat do servidor sera enviado de acordo com este intervalo
 TOUT_HEARTBEAT = 2.0
@@ -175,7 +175,8 @@ class OnlineCalcServer(McastServiceServer,Thread):
         requisicao request foi respondida. """
         willAnswer = self.whoAnswers()
         if force or willAnswer == self.getServer():
-            reply = str(self.getServer().getAddr())+": "
+            reply = "Server%d "%(self.getServer().getID())
+            reply += str((self.getServer().getAddr()))+": "
             try:
                 reply += str(eval(request.getRequest()))
             except (SyntaxError,TypeError),error:
