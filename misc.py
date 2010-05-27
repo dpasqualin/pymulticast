@@ -99,6 +99,9 @@ class Server(object):
     def getPort(self):
         return self.__port
 
+    def getAddr(self):
+        return (self.getPort(),self.getHostname())
+
     def imalive(self):
         return self.__alive
 
