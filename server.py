@@ -43,7 +43,7 @@ class OnlineCalcServer(McastServiceServer,Thread):
 
         while not self.__quit:
             (data,(ip,port)) = self.getRequest()
-            self.parserRequest(data,ip,port)
+            Thread(target=self.parserRequest,args=(data,ip,port)).start()
 
     def parserRequest(self, data, ip, port):
         """ Recebe uma requisicao e faz o parser executando os metodos
@@ -59,6 +59,7 @@ class OnlineCalcServer(McastServiceServer,Thread):
         reCONFIRM = re.compile("%s:CONFIRM:%s$" % (reID,reREQCONF))
         reREQUEST = re.compile("^%s:%s$"%(rePORT,reREQ))
         reQUIT = re.compile("^%s:QUIT$"% reID)
+
         if reALIVE.match(data):
             data = reALIVE.search(data)
             sid = int(data.group("id"))
