@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from mcastservice import McastServiceServer
-import re,sys,socket,threading,time
+import re,sys,socket,time
 from misc import Server,Request,Timeout,Log,readConf
 from misc import LOGERROR,LOGWARNING,LOGCONTROL,LOGMESSAGE,LOGDEBUG
+from threading import Thread
 
 # O HeartBeat do servidor sera enviado de acordo com este intervalo
 TOUT_HEARTBEAT = 2.0
@@ -14,10 +15,10 @@ TOUT_DEAD = 2*TOUT_HEARTBEAT
 # quem sera o novo servidor a tentar envia-la
 TOUT_RETRANS = TOUT_DEAD+1
 
-class OnlineCalcServer(McastServiceServer,threading.Thread):
+class OnlineCalcServer(McastServiceServer,Thread):
     def __init__(self, serverID, mcastPort, mcastAddr, serverFile):
 
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
         McastServiceServer.__init__(self,mcastPort,mcastAddr)
         self.__serverDict = self.readServerFile(serverFile)
         self.__server = int(serverID)
@@ -34,7 +35,6 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
     def run(self):
         """ Este metodo recebe as mensagens e endereca para o metodo
         correto """
-
 
         # Criando timeout para o heartbeat
         self.__createTimeout(self.sendHeartBeat,TOUT_HEARTBEAT)
@@ -188,7 +188,7 @@ class OnlineCalcServer(McastServiceServer,threading.Thread):
         else:
             msg = "Server-%d respondera %s" %(willAnswer.getID(),request)
             # Cria timeout para verificar se mensagem foi de fato enviada
-            threading.Timer(TOUT_RETRANS,self.reTransfer,(request,)).start()
+            Timer(TOUT_RETRANS,self.reTransfer,(request,)).start()
             self.writeLog(LOGCONTROL,msg)
 
     def reTransfer(self,request):
