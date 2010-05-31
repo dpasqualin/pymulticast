@@ -1,0 +1,6 @@
+verbose=10
+# opcoes para o servidor
+mcast_addr=224.0.0.2
+mcast_port=1700
+# opcoes para o client
+udp_port=50000
