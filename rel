@@ -1,0 +1,168 @@
+= Universidade Federal do Paraná =
+= Departamento de Informática - Bacharelado em Ciência da Computação =
+= Prof. Elias P. Duarte Jr. =
+== Trabalho Prático de Redes de Computadores II - Turma 2010/1 ==
+== Calculadora Remota Tolerante a Falhas ==
+
+=== Diego Giovane Pasqualin – GRR20060983 ===
+=== Daniel Kossmann Ferraz - GRR20064459 ===
+
+%! Target  : html
+%! Style   : fancy.css
+%! Encoding: iso-8859-1
+%! Options : --toc --enum--title
+
++ Arquivos +
+++ Arquivos de configuração ++
+- serverlist.txt
+Contém a lista dos servidores multicast utilizados, no formato:
+[# Comentário]
+<ID> <HOSTNAME> <PORT>
+- mcast.conf
+Contém as configurações utilizadas no multicast.
+
+++ Arquivos principais ++
+- client.py
+Arquivo para executar o cliente.
+Uso: $ ./client.py
+
+Formato das expressões aritméticas aceitas, em expressão regular: ^[0-9\.()\+\-\/\*]*$
+Ex: 4+5; 5/0
+O servidor detecta erro de sintaxe e divisão por zero e retorna mensagem apropriada ao cliente.
+- server.py
+Arquivo que inicia um servidor.
+Uso: $ ./server.py ID_DO_SERVIDOR serverlist.txt
+O arquivo serverlist.txt deve possuir um servidor listado com o id ID_DO_SERVIDOR e hostname igual ao hostname do servidor que está sendo lançado.
+- mcast.py
+API para a utilização do multicast.
+- mcastservice.py
+API para criação de um serviço de troca de mensagens multicast/UDP. Nesse contexto um servidor é o que recebe uma mensagem via multicast e retorna uma resposta direta via UDP, ao passo que cliente envia uma mensagem multicast e aguarda uma resposta em um canal UDP único.
+- udp.py
+API para o uso do protocolo UDP.
+- misc.py
+Classes e métodos gerais, que não se enquadravam nos outros arquivos, como: leitura do arquivo de configuração, temporizador (executa um método de acordo com um determinado intervalo de tempo), classe que define um servidor e uma requisição, entre outros. 
+
+++ Arquivos de log ++
+mcast.log: Mensagens gerais do programa, geradas em qualquer classe por qualquer servidor/cliente.
+serverX.log (X sendo o ID do servidor): Contém o debug de todos os eventos recebidos e enviados pelo servidor em específico.
+
+ 
++ Funcionamento Geral +
+
+++ Comentários sobre o desenvolvimento ++
+O programa foi todo desenvolvido em Python.
+Cada requisição é tratada em uma thread diferente, assim como todo o controle de tempos para os timeouts.
+Por algum motivo que não conseguimos descobrir, o programa só funcionou em algumas das servidoras do DINF, fato que também ocorreu com outras equipes.
+
+++ Método de eleição do servidor para resposta ++
+É escolhido sempre o servidor com o menor ID para enviar a resposta ao cliente.
+Quando os servidores recebem uma requisição do cliente, cada um deles a adiciona em sua lista de requisições e também verificam se, dentro da lista de servidores ativos se ele próprio é o de menor ID. Caso positivo ele envia a resposta ao cliente e notifica os outros servidores que a resposta foi enviada. Se não, espera receber uma confirmação de envio de resposta por outro servidor, até dar o tempo de timeout. Caso seja detectado que o servidor previamente selecionado para responder a requisição falhe, a eleição é refeita e o ciclo se repete até algum servidor enviar uma resposta ou dar timeout no cliente. Desta maneira é prevenido erros por um “efeito cascata”, onde um servidor vai se tornando inativo atrás do outro.
+
+++ Métodos de controle interno ++
+Ao todo são utilizados 4 timeouts no sistema:
+- tout_heartbeat
+O heartbeat do servidor é enviado de acordo com um intervalo pré-definido.
+Seu valor padrão é definido como:  2 segundos
+Localizado em: server.py
+- tout_dead
+Se um servidor qualquer não enviar um heartbeat nesse intervalo de tempo , ele é marcado como "morto".
+Seu valor é definido como: 2*tout_heartbeat
+Localizado em: server.py
+- tout_retrans
+Timeout para verificar se uma requisição foi de fato enviada e decidir quem será o novo servidor a tentar enviá-la.
+Seu valor é definido como: tout_dead+1
+Localizado em: server.py
+- udp_client_timeout
+Este timeout define quanto tempo um cliente aguarda até assumir que não irá obter resposta de sua requisição.
+Seu valor é definido como: 10.0 segundos
+Localizado em: udp.py
+
+Quando o usuário envia o sinal de [Ctrl+c] para finalizar (desconectar/matar) um servidor, o mesmo envia uma mensagem de saída à todos os outros servidores, para que eles fiquem sabendo da sua retirada. Caso um servidor for terminado de uma outra maneira, por um kill por exemplo, os outros ficarão sabendo da sua saída apenas quando o tempo de timeout da atualização da lista de servidores ativos estourar e for verificado que tal servidor não enviou seu heartbeat, sendo assim considerado como “morto”.
+O envio de sinal da saída de um servidor foi implementado para que os outros servidores não precisassem esperar chegar o heartbeat para saberem da “morte” do mesmo, tornando assim esse o processo um pouco mais rápido.
+
+++ Comunicação entre os processos ++
+Para fazer a comunicação entre os servidores e o cliente um formato específico de mensagens foi utilizado, com qualquer mensagem fora desse formato são descartada, para que não existam interferências durante a execução do sistema.
+
+O cliente comunica-se com os servidores via multicast, e os servidores entre si via multicast também. Mas o servidor envia a resposta para o cliente utilizando udp.
+
+++ Logs ++
+Todas as mensagens de debug são armazenadas em arquivos de logs para uma possível análise do comportamento do sistema caso ele apresente um funcionamento não esperado.
+Cada servidor possui seu próprio .log.
+
++ Exemplo de funcionamento do programa +
+
+Executando os servidores: 1,2 e 4 e um cliente.
+
+++ serverlist.txt ++
+# lista com os servidores multicast
+# ID HOSTNAME PORT [COMMENT]
+
+1 macalan.c3sl.ufpr.br 50000
+2 cohiba.c3sl.ufpr.br 50000
+3 caporal.c3sl.ufpr.br 50000
+4 salinas.c3sl.ufpr.br 50000
+
+++ Cliente ++
+$ ./client.py 
+ctrl+c para sair. 
+> 40,5+4 
+Server1 (50000, 'macalan.c3sl.ufpr.br'): 44,5 
+… (todos os servidores foram retirados de execução)
+> 40.5/8 
+Sem resposta (timeout estourou)
+
+++ Servidor 1 ++
+$ ./server.py 1 serverlist.txt
+May 30 105237 2010: Server-1 Iniciando... 
+May 30 105237 2010: Server-1 MissingHeartBeat:2 
+May 30 105237 2010: Server-1 MissingHeartBeat:3 
+May 30 105237 2010: Server-1 MissingHeartBeat:4 
+May 30 105237 2010: Server-1 HeartBeatReceived:2 
+May 30 105238 2010: Server-1 HeartBeatReceived:4 
+…
+May 30 105237 2010: Server-1 MissingHeartBeat:3 
+…
+May 30 105242 2010: Server-1 Request:200.17.202.50:50000:40.5+4 
+May 30 105242 2010: Server-1 Respondendo 200.17.202.50:50000:40.5+4 = Server1 (50000, 'macalan.c3sl.ufpr.br'): 44.5 
+May 30 105242 2010: Server-1 Respondi 200.17.202.50:50000:40.5+4 
+…
+
+++ Servidor 2 ++
+$ ./server.py 2 serverlist.txt
+May 30 105237 2010: Server-2 Iniciando... 
+May 30 105237 2010: Server-2 MissingHeartBeat:1 
+May 30 105237 2010: Server-2 MissingHeartBeat:3 
+May 30 105237 2010: Server-2 MissingHeartBeat:4 
+May 30 105238 2010: Server-2 HeartBeatReceived:4 
+May 30 105239 2010: Server-2 HeartBeatReceived:1 
+…
+May 30 105241 2010: Server-2 MissingHeartBeat:3 
+…
+May 30 105242 2010: Server-2 Request:200.17.202.50:50000:40.5+4 
+May 30 105242 2010: Server-2 Server-1 respondera 200.17.202.50:50000:40.5+4 
+May 30 105242 2010: Server-2 Servidor 1 Respondeu 200.17.202.50:50000:40.5+4 
+…
+May 30 105933 2010: Server-2 Servidor 4 desconectou 
+May 30 105933 2010: Server-2 MissingHeartBeat:4 
+May 30 105933 2010: Server-2 Saindo 
+May 30 105933 2010: Server-2 Morto 
+
+++ Servidor 4 ++
+$ ./server.py 4 serverlist.txt
+May 30 105239 2010: Server-4 Iniciando... 
+May 30 105239 2010: Server-4 MissingHeartBeat:1 
+May 30 105239 2010: Server-4 MissingHeartBeat:2 
+May 30 105239 2010: Server-4 MissingHeartBeat:3 
+May 30 105239 2010: Server-4 HeartBeatReceived:1 
+May 30 105240 2010: Server-4 HeartBeatReceived:2 
+…
+May 30 105239 2010: Server-4 MissingHeartBeat:3 
+...
+May 30 105243 2010: Server-4 Request:200.17.202.50:50000:40.5+4 
+May 30 105243 2010: Server-4 Server-1 respondera 200.17.202.50:50000:40.5+4 
+May 30 105243 2010: Server-4 Servidor 1 Respondeu 200.17.202.50:50000:40.5+4
+…
+May 30 105933 2010: Server-4 Saindo 
+May 30 105933 2010: Server-4 Morto 
+
+
